@@ -1,107 +1,99 @@
 // lib/sheets.js
-// ตัวเชื่อมต่อ Google Sheets API v4 แทน SpreadsheetApp ของ Apps Script เดิม
-// ใช้ Service Account (บัญชีหุ่นยนต์) ยืนยันตัวตน ตามที่ตั้งค่าไว้ในคู่มือ Phase 2
+// ตัวเชื่อมต่อ Google Sheets API (แทน SpreadsheetApp ของ Apps Script เดิม)
+// ใช้ Service Account (ดูวิธีสร้างใน README.md หัวข้อ Phase 2) เพื่ออ่าน/เขียนชีตแบบเซิร์ฟเวอร์ต่อเซิร์ฟเวอร์ ไม่ต้องมีคนล็อกอิน
 
 const { google } = require('googleapis');
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
-function getAuth() {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  // Render/ระบบ env var มักเก็บ private key เป็นบรรทัดเดียวโดยแทน newline ด้วย "\n" ตัวอักษร
-  // ต้องแปลงกลับเป็น newline จริงก่อนใช้งาน ไม่งั้นจะ auth ไม่ผ่าน
-  const key = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
-  if (!email || !key) {
-    throw new Error('ยังไม่ได้ตั้งค่า GOOGLE_SERVICE_ACCOUNT_EMAIL หรือ GOOGLE_PRIVATE_KEY ใน environment variables');
-  }
-  return new google.auth.JWT({
-    email,
-    key,
-    scopes: [
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive.file' // สำหรับฟีเจอร์บันทึกรายงาน PDF ลง Drive ในอนาคต
-    ]
-  });
-}
-
 let _sheetsClient = null;
-function getSheetsClient() {
-  if (!_sheetsClient) {
-    _sheetsClient = google.sheets({ version: 'v4', auth: getAuth() });
+
+// สร้าง client เชื่อมต่อ Google Sheets API ด้วย Service Account แล้วแคชไว้ใช้ซ้ำ
+// (ไม่ต้อง authorize ใหม่ทุกครั้งที่เรียกใช้ฟังก์ชันด้านล่าง ประหยัดเวลา round-trip)
+async function getSheetsClient() {
+  if (_sheetsClient) return _sheetsClient;
+
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  // 🆕 ค่า private key ที่วางใน environment variable มักมี "\n" เป็นตัวอักษรจริง (ไม่ใช่ขึ้นบรรทัดใหม่จริง)
+  // ต้องแปลงกลับเป็นขึ้นบรรทัดใหม่จริงก่อน ไม่งั้น JWT auth จะ parse คีย์ไม่ผ่าน
+  const key = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+
+  if (!email || !key) {
+    throw new Error('ไม่พบ GOOGLE_SERVICE_ACCOUNT_EMAIL หรือ GOOGLE_PRIVATE_KEY ใน environment variables กรุณาตั้งค่าตาม README.md Phase 2-3');
   }
+  if (!SPREADSHEET_ID) {
+    throw new Error('ไม่พบ SPREADSHEET_ID ใน environment variables');
+  }
+
+  const auth = new google.auth.JWT({
+    email: email,
+    key: key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets']
+  });
+  await auth.authorize();
+
+  _sheetsClient = google.sheets({ version: 'v4', auth: auth });
   return _sheetsClient;
 }
 
-// อ่านข้อมูลทั้งชีต (เทียบเท่า sheet.getDataRange().getValues() ของ Apps Script)
+// ดึงค่าทั้งหมดของชีตเดียว คืนเป็น array 2 มิติ (แถวที่ 0 = หัวตาราง) เทียบเท่า sheet.getDataRange().getValues() เดิม
 async function getValues(sheetName) {
-  const sheets = getSheetsClient();
-  const res = await sheets.spreadsheets.values.get({
+  const sheets = await getSheetsClient();
+  const resp = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range: sheetName
   });
-  return res.data.values || [];
+  return resp.data.values || [];
 }
 
-// อ่านหลายชีตพร้อมกันในคำขอเดียว (เทียบเท่าการเปิดหลายชีตแยกกันของเดิม แต่เร็วกว่าเพราะยิง HTTP request ครั้งเดียว)
-// คืนค่าเป็น object { sheetName: values }
+// ดึงหลายชีตพร้อมกันในคำขอเดียว (เร็วกว่าเรียก getValues() หลายรอบแยกกัน) คืนเป็น object { ชื่อชีต: values }
 async function batchGetValues(sheetNames) {
-  const sheets = getSheetsClient();
-  const res = await sheets.spreadsheets.values.batchGet({
+  const sheets = await getSheetsClient();
+  const resp = await sheets.spreadsheets.values.batchGet({
     spreadsheetId: SPREADSHEET_ID,
     ranges: sheetNames
   });
-  const out = {};
-  (res.data.valueRanges || []).forEach((vr, i) => {
-    out[sheetNames[i]] = vr.values || [];
+  const result = {};
+  (resp.data.valueRanges || []).forEach(function(valueRange, idx) {
+    result[sheetNames[idx]] = valueRange.values || [];
   });
-  return out;
+  return result;
 }
 
-// เพิ่มแถวใหม่ต่อท้ายชีต (เทียบเท่า sheet.appendRow([...]))
-async function appendRow(sheetName, rowArray) {
-  const sheets = getSheetsClient();
+// เพิ่มแถวใหม่ต่อท้ายชีต เทียบเท่า sheet.appendRow([...]) เดิมใน Apps Script
+async function appendRow(sheetName, rowValues) {
+  const sheets = await getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
     range: sheetName,
     valueInputOption: 'USER_ENTERED',
     insertDataOption: 'INSERT_ROWS',
-    requestBody: { values: [rowArray] }
+    requestBody: { values: [rowValues] }
   });
 }
 
-// แก้ไขค่าช่องเดียว (เทียบเท่า sheet.getRange(row, col).setValue(value))
-// row/col นับแบบ 1-index เหมือน Apps Script (row 1 = หัวตาราง)
+// แก้ไขค่าช่องเดียว — row/col เป็น 1-index ตรงกับของเดิมใน Apps Script (แถวที่ 1 = หัวตาราง)
 async function updateCell(sheetName, row, col, value) {
-  const colLetter = columnToLetter(col);
-  const sheets = getSheetsClient();
+  const sheets = await getSheetsClient();
+  const a1 = sheetName + '!' + columnToLetter(col) + row;
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!${colLetter}${row}`,
+    range: a1,
     valueInputOption: 'USER_ENTERED',
     requestBody: { values: [[value]] }
   });
 }
 
-// แก้ไขทั้งแถว (เทียบเท่า sheet.getRange(row, 1, 1, n).setValues([[...]]))
-async function updateRow(sheetName, row, rowArray) {
-  const lastCol = columnToLetter(rowArray.length);
-  const sheets = getSheetsClient();
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `${sheetName}!A${row}:${lastCol}${row}`,
-    valueInputOption: 'USER_ENTERED',
-    requestBody: { values: [rowArray] }
-  });
-}
-
+// แปลงเลขคอลัมน์ (1,2,3...) เป็นตัวอักษรคอลัมน์แบบ A1 notation (1=A, 2=B, ..., 27=AA, ...)
 function columnToLetter(col) {
   let letter = '';
-  while (col > 0) {
-    const rem = (col - 1) % 26;
+  let n = col;
+  while (n > 0) {
+    const rem = (n - 1) % 26;
     letter = String.fromCharCode(65 + rem) + letter;
-    col = Math.floor((col - 1) / 26);
+    n = Math.floor((n - 1) / 26);
   }
   return letter;
 }
 
-module.exports = { getValues, batchGetValues, appendRow, updateCell, updateRow, columnToLetter };
+module.exports = { getValues: getValues, batchGetValues: batchGetValues, appendRow: appendRow, updateCell: updateCell };
