@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDD Badminton Club</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
+
+  <!-- 🆕 แถบแจ้งสถานะการย้ายระบบ: บอกตรงๆ ว่าเวอร์ชันนี้ยังมีแค่ฟีเจอร์หลัก ไม่ใช่ทุกฟีเจอร์ของเวอร์ชัน Apps Script -->
+  <div class="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs text-center py-2 px-4">
+    <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+    เวอร์ชันทดสอบการย้ายระบบ (MVP) — มีแค่ ลงทะเบียน / ดูรายชื่อวันนี้ / แอดมินเช็คอิน เท่านั้น ฟีเจอร์อื่นยังไม่ได้ย้ายมา
+  </div>
+
+  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-40">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400"><i class="fa-solid fa-shuttlecock"></i></div>
+        <div>
+          <span class="block font-bold text-sm text-slate-100 leading-tight">LDD Badminton Club</span>
+          <span class="block text-[10px] text-indigo-400 font-medium tracking-wider uppercase">Node.js + Sheets Edition</span>
+        </div>
+      </div>
+      <button onclick="openAdminLoginModal()" id="btnAdminNav" class="text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer"><i class="fa-solid fa-user-shield mr-1"></i>แอดมิน</button>
+    </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- ===================== ฟอร์มลงทะเบียน ===================== -->
+    <section class="bg-slate-800/40 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+      <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2 mb-4"><i class="fa-solid fa-clipboard-list text-indigo-400"></i>ลงทะเบียนเข้าใช้สนาม</h2>
+
+      <form id="regForm" class="space-y-4" onsubmit="handleRegister(event)">
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">เบอร์โทรศัพท์ <span class="text-rose-500">*</span></label>
+          <input type="tel" id="phone" required placeholder="กรอกเบอร์โทรศัพท์" class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">ชื่อเล่น <span class="text-rose-500">*</span></label>
+          <input type="text" id="nickname" required placeholder="ชื่อเล่น" class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">ชื่อ-นามสกุลจริง <span class="text-slate-600">(ถ้ามี)</span></label>
+          <input type="text" id="name" placeholder="เว้นว่างได้ถ้าเป็นบุคคลทั่วไป" class="w-full bg-slate-900/60 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">เวลาที่ต้องการเข้าใช้บริการ <span class="text-rose-500">*</span></label>
+          <select id="timeSlot" required class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-indigo-500 transition-all">
+            <option value="" disabled selected>-- เลือกช่วงเวลา --</option>
+            <option value="16:30 น.">16:30 น.</option>
+            <option value="17:00 น.">17:00 น.</option>
+            <option value="17:30 น.">17:30 น.</option>
+            <option value="18:00 น.">18:00 น.</option>
+            <option value="18:30 น.">18:30 น.</option>
+            <option value="19:00 น.">19:00 น.</option>
+            <option value="19:30 น.">19:30 น.</option>
+          </select>
+        </div>
+        <button type="submit" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl transition-all cursor-pointer"><i class="fa-solid fa-check mr-1"></i>ยืนยันลงทะเบียน</button>
+      </form>
+    </section>
+
+    <!-- ===================== รายชื่อผู้ลงทะเบียนวันนี้ ===================== -->
+    <section class="bg-slate-800/40 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-users text-emerald-400"></i>รายชื่อผู้ลงทะเบียนวันนี้ <span id="registerListCount" class="text-xs font-normal text-slate-500">(0 คน)</span></h2>
+        <button onclick="refreshData()" id="btnRefresh" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-3 py-2 rounded-xl transition-all cursor-pointer"><i id="refreshIcon" class="fa-solid fa-rotate mr-1"></i>รีเฟรช</button>
+      </div>
+      <div class="flex items-center gap-2 mb-3 text-xs text-slate-400">
+        <span>รับสมัครแล้ว <b id="navRegistered" class="text-slate-200">0</b> / <b id="navCap" class="text-slate-200">40</b> คน</span>
+      </div>
+      <div class="overflow-x-auto border border-slate-800 rounded-2xl">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-900 text-slate-400 border-b border-slate-800 font-semibold text-xs uppercase">
+              <th class="p-2.5 pl-4">#</th><th class="p-2.5">ชื่อเล่น</th><th class="p-2.5 text-center">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="publicListBody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== Modal: แอดมินล็อกอิน ===================== -->
+  <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
+      <div class="flex justify-between items-center">
+        <h3 class="font-bold text-base text-slate-200"><i class="fa-solid fa-user-shield text-indigo-400 mr-1"></i>เข้าสู่ระบบแอดมิน</h3>
+        <button onclick="closeAdminLoginModal()" class="text-slate-500 hover:text-slate-300 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <input type="password" id="adminPasswordInput" placeholder="รหัสผ่านแอดมิน" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500" onkeydown="if(event.key==='Enter') submitAdminLogin()">
+      <button onclick="submitAdminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl cursor-pointer">เข้าสู่ระบบ</button>
+    </div>
+  </div>
+
+  <!-- ===================== Panel: แอดมินเช็คอิน (แสดงหลังล็อกอินสำเร็จ) ===================== -->
+  <div id="adminPanel" class="hidden max-w-3xl mx-auto px-4 pb-10">
+    <section class="bg-slate-800/40 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden mt-6">
+      <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 to-orange-500"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-user-shield text-rose-400"></i>แผงแอดมิน — เช็คอิน</h2>
+        <button onclick="adminLogout()" class="text-xs text-slate-400 hover:text-white cursor-pointer">ออกจากระบบ</button>
+      </div>
+      <div class="overflow-x-auto border border-slate-800 rounded-2xl">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-900 text-slate-400 border-b border-slate-800 font-semibold text-xs uppercase">
+              <th class="p-2.5 pl-4">ชื่อเล่น</th><th class="p-2.5">ประเภท</th><th class="p-2.5">เบอร์โทร</th><th class="p-2.5 text-center">เช็คอิน</th>
+            </tr>
+          </thead>
+          <tbody id="adminListBody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+<script>
+  let masterList = [];
+
+  // 🆕 ตัวช่วยเรียก API แทน google.script.run ของเดิม (fetch ธรรมดา ส่ง cookie ไปด้วยเสมอสำหรับ endpoint ของแอดมิน)
+  async function callApi(path, method = 'GET', body = null) {
+    const res = await fetch('/api/' + path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: body ? JSON.stringify(body) : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok && res.status !== 401) throw new Error(data.msg || ('เกิดข้อผิดพลาด (HTTP ' + res.status + ')'));
+    return data;
+  }
+
+  async function refreshData() {
+    const icon = document.getElementById('refreshIcon');
+    icon.classList.add('animate-spin');
+    try {
+      const res = await callApi('data-summary');
+      masterList = res.list || [];
+      document.getElementById('navRegistered').innerText = res.totalRegistered || 0;
+      document.getElementById('navCap').innerText = res.registrationCap || 40;
+      document.getElementById('registerListCount').innerText = `(${(res.list || []).length} คน)`;
+      renderPublicList(masterList);
+      renderAdminList(masterList);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      icon.classList.remove('animate-spin');
+    }
+  }
+
+  function renderPublicList(list) {
+    const tbody = document.getElementById('publicListBody');
+    if (!list.length) { tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-slate-500">ยังไม่มีผู้ลงทะเบียนวันนี้</td></tr>`; return; }
+    tbody.innerHTML = list.map((item, idx) => {
+      const isHere = item.attendance === 'มาแล้ว';
+      const isWithdrawn = item.attendance === 'ถอน';
+      const badge = isWithdrawn
+        ? `<span class="bg-orange-500/15 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded-lg text-[10px] font-bold">ถอน</span>`
+        : isHere
+          ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-lg text-[10px] font-bold">มาแล้ว</span>`
+          : `<span class="bg-slate-700/30 text-slate-400 border border-slate-600/40 px-2 py-0.5 rounded-lg text-[10px] font-bold">ยังไม่มา</span>`;
+      return `<tr class="hover:bg-slate-800/20"><td class="p-2.5 pl-4 text-slate-500">${idx + 1}</td><td class="p-2.5 font-bold text-base">${item.nickname}</td><td class="p-2.5 text-center">${badge}</td></tr>`;
+    }).join('');
+  }
+
+  function renderAdminList(list) {
+    const tbody = document.getElementById('adminListBody');
+    if (!tbody) return;
+    if (!list.length) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">ยังไม่มีผู้ลงทะเบียนวันนี้</td></tr>`; return; }
+    tbody.innerHTML = list.map((item) => {
+      const checked = item.attendance === 'มาแล้ว' ? 'checked' : '';
+      const disabled = item.attendance === 'ถอน' ? 'disabled' : '';
+      return `<tr class="hover:bg-slate-800/20"><td class="p-2.5 pl-4 font-bold">${item.nickname}</td><td class="p-2.5 text-slate-400">${item.memberType}</td><td class="p-2.5 text-slate-400">${item.phone}</td><td class="p-2.5 text-center"><input type="checkbox" ${checked} ${disabled} onchange="toggleCheckIn(${item.row}, this.checked)" class="w-5 h-5 rounded cursor-pointer accent-emerald-600"></td></tr>`;
+    }).join('');
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    try {
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        nickname: document.getElementById('nickname').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        memberType: 'บุคคลทั่วไป',
+        timeSlot: document.getElementById('timeSlot').value
+      };
+      const res = await callApi('register', 'POST', payload);
+      if (res.success) {
+        Swal.fire({ icon: 'success', title: 'ลงทะเบียนสำเร็จ!', timer: 1800, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
+        document.getElementById('regForm').reset();
+        refreshData();
+      } else {
+        Swal.fire({ icon: 'error', title: 'ลงทะเบียนไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
+      }
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function openAdminLoginModal() { document.getElementById('adminLoginModal').style.display = 'flex'; }
+  function closeAdminLoginModal() { document.getElementById('adminLoginModal').style.display = 'none'; }
+
+  async function submitAdminLogin() {
+    const password = document.getElementById('adminPasswordInput').value;
+    try {
+      const res = await callApi('admin/login', 'POST', { password });
+      if (res.success) {
+        closeAdminLoginModal();
+        document.getElementById('adminPanel').classList.remove('hidden');
+        document.getElementById('btnAdminNav').innerText = 'แผงแอดมิน';
+        Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', timer: 1200, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
+      } else {
+        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', background: '#0f172a', color: '#e2e8f0' });
+      }
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: e.message, background: '#0f172a', color: '#e2e8f0' });
+    }
+  }
+
+  async function adminLogout() {
+    await callApi('admin/logout', 'POST');
+    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('btnAdminNav').innerText = 'แอดมิน';
+  }
+
+  async function toggleCheckIn(row, isChecked) {
+    const status = isChecked ? 'มาแล้ว' : 'ยังไม่มา';
+    try {
+      const res = await callApi('admin/checkin', 'POST', { row, status });
+      if (res.success) {
+        refreshData();
+        if (status === 'มาแล้ว') {
+          const text = res.feeCharged > 0
+            ? `เพิ่มค่าสนาม ${res.fee} บ. (${res.memberType}) เข้ายอดค้างจ่ายแล้ว`
+            : res.alreadyCharged
+              ? `ค่าสนาม ${res.fee} บ. (${res.memberType}) — เก็บไปแล้วก่อนหน้านี้`
+              : `ค่าสนาม ${res.fee || 0} บ. (${res.memberType || 'ไม่มีค่าใช้จ่าย'})`;
+          Swal.fire({ icon: 'success', title: 'เช็คอินสำเร็จ', text, timer: 2200, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
+        }
+      } else {
+        Swal.fire({ icon: 'error', title: 'เช็คอินไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
+        refreshData();
+      }
+    } catch (e) {
+      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
+      refreshData();
+    }
+  }
+
+  refreshData();
+  setInterval(refreshData, 15000);
+</script>
+</body>
+</html>
