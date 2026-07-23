@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LDD Badminton Club — ระบบลงทะเบียน (MVP)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-200 min-h-screen">
+
+  <!-- แถบเมนูบน -->
+  <nav class="border-b border-slate-800 bg-slate-900/70 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-500/20">
+          <i class="fa-solid fa-shuttlecock text-white text-sm"></i>
+        </div>
+        <div>
+          <div class="font-bold text-sm leading-tight">LDD Badminton Club</div>
+          <div class="text-[10px] text-indigo-400 font-medium tracking-wider uppercase leading-tight">MVP · กำลังทยอยย้ายฟีเจอร์</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="btnNavRegister" onclick="switchView('register')" class="text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-600 text-white transition-all"><i class="fa-solid fa-house mr-1"></i>หน้าแรก</button>
+        <button id="btnNavAdmin" onclick="switchView('admin')" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 transition-all"><i class="fa-solid fa-lock mr-1"></i>แอดมิน</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="max-w-3xl mx-auto px-4 py-6">
+
+    <!-- ===================== หน้าแรก: ลงทะเบียน ===================== -->
+    <section id="viewRegister">
+      <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+        <div class="flex items-center justify-between mb-1">
+          <h1 class="font-bold text-lg text-slate-100"><i class="fa-solid fa-pen-to-square text-indigo-400 mr-2"></i>ลงทะเบียนเข้าใช้สนาม</h1>
+          <div class="text-xs bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl">
+            <span class="text-slate-400">ลงทะเบียนแล้ว:</span> <span id="regCount" class="font-bold text-indigo-400">0</span><span class="text-slate-500">/<span id="regCap">40</span></span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500 mb-4">กรอกข้อมูลให้ครบ แล้วกด "ยืนยันลงทะเบียน" — ใช้เบอร์โทรเดิมหรือชื่อเล่นเดิมซ้ำในวันเดียวกันไม่ได้</p>
+
+        <div id="regClosedBanner" class="hidden bg-amber-950/60 border border-amber-500/40 rounded-2xl p-4 mb-4 text-sm text-amber-100"></div>
+
+        <form id="registerForm" class="space-y-3" onsubmit="return handleRegisterSubmit(event)">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">ชื่อ-นามสกุล (ถ้ามี)</label>
+              <input type="text" id="fName" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500" placeholder="ไม่บังคับ">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">ชื่อเล่น <span class="text-rose-400">*</span></label>
+              <input type="text" id="fNickname" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500" placeholder="เช่น เบนซ์">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">เบอร์โทรศัพท์</label>
+              <input type="tel" id="fPhone" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500" placeholder="08xxxxxxxx">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">ประเภทสมาชิก</label>
+              <select id="fMemberType" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+                <option value="บุคคลทั่วไป">บุคคลทั่วไป</option>
+                <option value="สมาชิกสามัญ">สมาชิกสามัญ</option>
+                <option value="สมาชิกสมทบ">สมาชิกสมทบ</option>
+                <option value="สมาชิกกิตติมศักดิ์">สมาชิกกิตติมศักดิ์</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">เวลาที่ต้องการเข้าใช้บริการ <span class="text-rose-400">*</span></label>
+            <select id="fTimeSlot" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
+              <option value="">-- เลือกเวลา --</option>
+              <option value="16:30 น.">16:30 น.</option>
+              <option value="17:00 น.">17:00 น.</option>
+              <option value="17:30 น.">17:30 น.</option>
+              <option value="18:00 น.">18:00 น.</option>
+              <option value="18:30 น.">18:30 น.</option>
+              <option value="19:00 น.">19:00 น.</option>
+              <option value="19:30 น.">19:30 น.</option>
+            </select>
+          </div>
+          <button type="submit" id="btnSubmitRegister" class="w-full mt-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all">
+            <i class="fa-solid fa-paper-plane mr-2"></i>ยืนยันลงทะเบียน
+          </button>
+        </form>
+      </div>
+
+      <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl mt-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold text-sm text-slate-200"><i class="fa-solid fa-list-check text-indigo-400 mr-2"></i>รายชื่อผู้ลงทะเบียนวันนี้</h2>
+          <button onclick="refreshData()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-xl transition-all"><i id="publicRefreshIcon" class="fa-solid fa-rotate mr-1"></i>รีเฟรช</button>
+        </div>
+        <div id="publicListBody" class="space-y-1.5 text-sm"></div>
+      </div>
+    </section>
+
+    <!-- ===================== หน้าแอดมิน ===================== -->
+    <section id="viewAdmin" class="hidden">
+
+      <!-- ฟอร์มล็อกอิน (โชว์ตอนยังไม่ได้ล็อกอิน) -->
+      <div id="adminLoginBox" class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl max-w-sm mx-auto">
+        <h2 class="font-bold text-base text-slate-100 mb-1"><i class="fa-solid fa-lock text-indigo-400 mr-2"></i>เข้าสู่ระบบแอดมิน</h2>
+        <p class="text-xs text-slate-500 mb-3">กรอกรหัสผ่านแอดมิน (ตั้งไว้ที่ ADMIN_PASSWORD)</p>
+        <form onsubmit="return handleAdminLogin(event)" class="space-y-3">
+          <input type="password" id="adminPasswordInput" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500" placeholder="รหัสผ่านแอดมิน">
+          <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl transition-all"><i class="fa-solid fa-right-to-bracket mr-1"></i>เข้าสู่ระบบ</button>
+          <div id="adminLoginError" class="hidden text-xs text-rose-400 text-center"></div>
+        </form>
+      </div>
+
+      <!-- แผงแอดมิน (โชว์หลังล็อกอินสำเร็จ) -->
+      <div id="adminPanel" class="hidden">
+        <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+          <div class="flex items-center justify-between mb-1 flex-wrap gap-2">
+            <h2 class="font-bold text-lg text-slate-100"><i class="fa-solid fa-user-shield text-indigo-400 mr-2"></i>แผงแอดมิน</h2>
+            <div class="flex items-center gap-2">
+              <button onclick="refreshData()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-2 rounded-xl transition-all"><i id="adminRefreshIcon" class="fa-solid fa-rotate mr-1"></i>รีเฟรช</button>
+              <button onclick="handleAdminLogout()" class="text-xs bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl transition-all"><i class="fa-solid fa-right-from-bracket mr-1"></i>ออกจากระบบ</button>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 mb-4">ติ๊กช่อง "เช็คอิน" เพื่อบันทึกว่ามาแล้ว ระบบจะคิดค่าสนามอัตโนมัติตามประเภทสมาชิกให้ทันที</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs min-w-[600px]">
+              <thead>
+                <tr class="bg-slate-950/60 text-slate-400 border-b border-slate-800 font-semibold uppercase tracking-wider">
+                  <th class="p-2.5 pl-3">ชื่อ (ชื่อเล่น)</th>
+                  <th class="p-2.5">ประเภทสมาชิก</th>
+                  <th class="p-2.5">เบอร์โทร</th>
+                  <th class="p-2.5 text-right">ค้างจ่าย</th>
+                  <th class="p-2.5 text-right">จ่ายแล้ว</th>
+                  <th class="p-2.5 text-center pr-3">เช็คอิน</th>
+                </tr>
+              </thead>
+              <tbody id="adminTableBody" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentView = 'register';
+    let isAdminLoggedIn = false;
+
+    // ---------- สลับหน้า ----------
+    function switchView(view) {
+      currentView = view;
+      document.getElementById('viewRegister').classList.toggle('hidden', view !== 'register');
+      document.getElementById('viewAdmin').classList.toggle('hidden', view !== 'admin');
+      document.getElementById('btnNavRegister').className = view === 'register'
+        ? 'text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-600 text-white transition-all'
+        : 'text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 transition-all';
+      document.getElementById('btnNavAdmin').className = view === 'admin'
+        ? 'text-xs font-semibold px-3 py-2 rounded-xl bg-indigo-600 text-white transition-all'
+        : 'text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 transition-all';
+      if (view === 'admin' && isAdminLoggedIn) refreshData();
+    }
+
+    // ---------- ดึงข้อมูลสรุป (GET /api/data-summary) ----------
+    async function refreshData() {
+      const pubIcon = document.getElementById('publicRefreshIcon');
+      const adminIcon = document.getElementById('adminRefreshIcon');
+      if (pubIcon) pubIcon.classList.add('fa-spin');
+      if (adminIcon) adminIcon.classList.add('fa-spin');
+      try {
+        const resp = await fetch('/api/data-summary', { credentials: 'include' });
+        const res = await resp.json();
+        renderPublicList(res.list || []);
+        renderAdminTable(res.list || []);
+        document.getElementById('regCount').innerText = res.totalRegistered || 0;
+        document.getElementById('regCap').innerText = res.registrationCap || 40;
+
+        const banner = document.getElementById('regClosedBanner');
+        const form = document.getElementById('registerForm');
+        if (res.registrationIsOpen === false) {
+          banner.innerText = 'ขณะนี้ปิดรับลงทะเบียนชั่วคราว';
+          banner.classList.remove('hidden'); form.classList.add('hidden');
+        } else if ((res.totalRegistered || 0) >= (res.registrationCap || 40)) {
+          banner.innerText = res.registrationFullMessage || 'ระบบได้ปิดรับการลงทะเบียนเนื่องจากสิทธิ์เต็มจำนวน';
+          banner.classList.remove('hidden'); form.classList.add('hidden');
+        } else {
+          banner.classList.add('hidden'); form.classList.remove('hidden');
+        }
+      } catch (e) {
+        console.error('refreshData error:', e);
+      } finally {
+        if (pubIcon) pubIcon.classList.remove('fa-spin');
+        if (adminIcon) adminIcon.classList.remove('fa-spin');
+      }
+    }
+
+    // ---------- รายชื่อฝั่งสาธารณะ (แสดงแค่ชื่อเล่น + สถานะ ไม่โชว์ยอดเงิน) ----------
+    function renderPublicList(list) {
+      const box = document.getElementById('publicListBody');
+      const visible = list.filter(function(p) { return !p.isWalkIn; });
+      if (visible.length === 0) {
+        box.innerHTML = '<div class="text-center text-slate-600 py-6">ยังไม่มีใครลงทะเบียนวันนี้</div>';
+        return;
+      }
+      box.innerHTML = visible.map(function(p) {
+        const isWithdrawn = p.isWithdrawn;
+        const isHere = p.attendance === 'มาแล้ว';
+        const badge = isWithdrawn
+          ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-300">เล่นเสร็จแล้ว</span>'
+          : (isHere
+            ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">มาแล้ว</span>'
+            : '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700 text-slate-400">ยังไม่มา</span>');
+        return '<div class="flex items-center justify-between bg-slate-950/50 border border-slate-800/80 rounded-xl px-3 py-2">' +
+          '<span class="font-medium text-slate-200">' + escapeHtml(p.nickname) + '</span>' + badge + '</div>';
+      }).join('');
+    }
+
+    // ---------- ตารางฝั่งแอดมิน ----------
+    function renderAdminTable(list) {
+      const tbody = document.getElementById('adminTableBody');
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">ยังไม่มีผู้ลงทะเบียนวันนี้</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function(p) {
+        const isHere = p.attendance === 'มาแล้ว';
+        const rowClass = isHere ? 'bg-emerald-500/5 hover:bg-emerald-500/10' : 'bg-rose-500/5 hover:bg-rose-500/10';
+        return '<tr class="' + rowClass + ' transition-colors">' +
+          '<td class="p-2.5 pl-3 font-medium text-slate-200">' + escapeHtml(p.name) + ' (' + escapeHtml(p.nickname) + ')</td>' +
+          '<td class="p-2.5 text-slate-400">' + escapeHtml(p.memberType) + '</td>' +
+          '<td class="p-2.5 text-slate-400">' + escapeHtml(p.phone || '-') + '</td>' +
+          '<td class="p-2.5 text-right text-rose-400 font-bold">' + (p.unpaidAmount || 0) + ' บ.</td>' +
+          '<td class="p-2.5 text-right text-emerald-400">' + (p.paidAmount || 0) + ' บ.</td>' +
+          '<td class="p-2.5 text-center pr-3"><input type="checkbox" ' + (isHere ? 'checked' : '') + ' onchange="handleCheckIn(' + p.row + ', this.checked)" class="w-5 h-5 rounded cursor-pointer accent-emerald-600"></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    // ---------- ลงทะเบียน (POST /api/register) ----------
+    async function handleRegisterSubmit(ev) {
+      ev.preventDefault();
+      const btn = document.getElementById('btnSubmitRegister');
+      btn.disabled = true; btn.innerText = 'กำลังบันทึก...';
+      try {
+        const body = {
+          name: document.getElementById('fName').value.trim(),
+          nickname: document.getElementById('fNickname').value.trim(),
+          phone: document.getElementById('fPhone').value.trim(),
+          memberType: document.getElementById('fMemberType').value,
+          timeSlot: document.getElementById('fTimeSlot').value
+        };
+        const resp = await fetch('/api/register', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const res = await resp.json();
+        if (res.success) {
+          alert('ลงทะเบียนสำเร็จ!');
+          document.getElementById('registerForm').reset();
+          refreshData();
+        } else {
+          alert(res.msg || 'ลงทะเบียนไม่สำเร็จ');
+        }
+      } catch (e) {
+        alert('เกิดข้อผิดพลาด: ' + e.message);
+      } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i>ยืนยันลงทะเบียน';
+      }
+      return false;
+    }
+
+    // ---------- แอดมินล็อกอิน (POST /api/admin/login) ----------
+    async function handleAdminLogin(ev) {
+      ev.preventDefault();
+      const errBox = document.getElementById('adminLoginError');
+      errBox.classList.add('hidden');
+      try {
+        const password = document.getElementById('adminPasswordInput').value;
+        const resp = await fetch('/api/admin/login', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: password })
+        });
+        const res = await resp.json();
+        if (res.success) {
+          isAdminLoggedIn = true;
+          document.getElementById('adminLoginBox').classList.add('hidden');
+          document.getElementById('adminPanel').classList.remove('hidden');
+          refreshData();
+        } else {
+          errBox.innerText = res.msg || 'รหัสผ่านไม่ถูกต้อง';
+          errBox.classList.remove('hidden');
+        }
+      } catch (e) {
+        errBox.innerText = 'เกิดข้อผิดพลาด: ' + e.message;
+        errBox.classList.remove('hidden');
+      }
+      return false;
+    }
+
+    async function handleAdminLogout() {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
+      isAdminLoggedIn = false;
+      document.getElementById('adminPanel').classList.add('hidden');
+      document.getElementById('adminLoginBox').classList.remove('hidden');
+      document.getElementById('adminPasswordInput').value = '';
+    }
+
+    // ---------- เช็คอิน (POST /api/admin/checkin) ----------
+    async function handleCheckIn(row, checked) {
+      const status = checked ? 'มาแล้ว' : 'ยังไม่มา';
+      try {
+        const resp = await fetch('/api/admin/checkin', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ row: row, status: status })
+        });
+        const res = await resp.json();
+        if (!res.success) {
+          if (res.needLogin) {
+            alert('เซสชันหมดอายุ กรุณาเข้าสู่ระบบแอดมินใหม่');
+            handleAdminLogout();
+          } else {
+            alert(res.msg || 'บันทึกไม่สำเร็จ');
+          }
+        } else if (res.feeCharged > 0) {
+          alert('เช็คอินสำเร็จ — คิดค่าสนาม ' + res.feeCharged + ' บาท (' + res.memberType + ')');
+        }
+        refreshData();
+      } catch (e) {
+        alert('เกิดข้อผิดพลาด: ' + e.message);
+        refreshData();
+      }
+    }
+
+    // เปิดหน้ามาก็ดึงข้อมูลทันที (ฝั่งสาธารณะไม่ต้องล็อกอิน เห็นรายชื่อได้เลย)
+    refreshData();
+  </script>
+
+</body>
+</html>
