@@ -2,14 +2,15 @@
 // เซิร์ฟเวอร์หลักของระบบ (แทนที่ Code.gs เดิมที่รันบน Google Apps Script)
 //
 // 🆕 สถานะการย้าย (อ่านก่อนใช้งาน):
-// รอบนี้ผมย้ายมาให้เฉพาะ "แกนหลัก" ที่พิสูจน์ว่าทั้งระบบ (GitHub → Render → Sheets API → Redis) เดินได้จริงก่อน:
-//   ✅ ดูรายชื่อผู้ลงทะเบียนวันนี้ (GET /api/data-summary)
+//   ✅ ดูรายชื่อผู้ลงทะเบียนวันนี้ (GET /api/data-summary) — ตอนนี้รวม masterProducts (คลังสินค้า) ด้วยแล้ว
 //   ✅ ลงทะเบียนเข้าใช้สนาม (POST /api/register)
 //   ✅ แอดมินล็อกอิน (POST /api/admin/login)
 //   ✅ แอดมินเช็คอิน + คิดค่าสนามอัตโนมัติ (POST /api/admin/checkin)
-// ฟีเจอร์อื่นที่เหลือ (Walk-in, จัดคิวสนามเรียลไทม์, ขายของ/ซื้อลูกแบด, ปิดสนามประจำวัน, รายงาน PDF,
-// ตั้งค่าเสาร์-อาทิตย์ ฯลฯ) ยังไม่ได้ย้ายมาในรอบนี้ — พอรอบนี้ทดสอบผ่านแล้ว บอกผมได้เลย จะทยอยย้ายต่อให้ครบ
-// ทีละฟีเจอร์ในรอบถัดๆ ไป (เขียนทั้งหมดพร้อมกันจะเสี่ยงพลาดจุดเล็กจุดน้อยเยอะ ทยอยทำจะตรวจสอบได้ง่ายกว่า)
+//   ✅ Walk-in ลงทะเบียนหน้างาน (POST /api/walkin)
+//   ✅ ขายของ + ตัดสต๊อกอัตโนมัติ (POST /api/admin/shop-sale)
+//   ✅ ซื้อลูกแบดหารจ่าย (POST /api/admin/shuttlecock)
+// ฟีเจอร์อื่นที่เหลือ (จัดคิวสนามเรียลไทม์, ปิดสนามประจำวัน, รายงาน PDF ส่ง Drive,
+// ตั้งค่าเสาร์-อาทิตย์, ระบบถอนรายชื่อ ฯลฯ) ยังไม่ได้ย้ายมาในรอบนี้ — บอกได้เลยเมื่อพร้อมย้ายรอบถัดไป
 
 require('dotenv').config();
 const express = require('express');
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const REG_SHEET = 'Registrations';
 const SALES_SHEET = 'ProductSales';
+const PRODUCTS_SHEET = 'Products';
 
 // คอลัมน์ของชีต Registrations (1-index ตรงกับของเดิมทุกประการ เพื่อให้ใช้สเปรดชีตเดิมต่อได้เลยไม่ต้องย้ายข้อมูล)
 // A=ID, B=Timestamp, C=Name, D=Nickname, E=Phone, F=MemberType, G=TimeSlot, H=Status, I=Attendance, J=CustomFee, K=IsWalkIn
@@ -53,7 +55,17 @@ app.get('/api/data-summary', async (req, res) => {
     const cached = await redisDb.getCache('data_summary');
     if (cached) return res.json(JSON.parse(cached));
 
-    const { [REG_SHEET]: regData, [SALES_SHEET]: salesData } = await sheetsDb.batchGetValues([REG_SHEET, SALES_SHEET]);
+    const { [REG_SHEET]: regData, [SALES_SHEET]: salesData, [PRODUCTS_SHEET]: prodData } = await sheetsDb.batchGetValues([REG_SHEET, SALES_SHEET, PRODUCTS_SHEET]);
+
+    // 🆕 คลังรายการสินค้าหลัก (ชื่อ, ราคา, คงเหลือ) — ใช้แสดงในหน้าขายของฝั่งแอดมิน
+    const masterProducts = [];
+    for (let p = 1; p < (prodData || []).length; p++) {
+      const row = prodData[p];
+      if (!row[0]) continue;
+      const stockRaw = row[2];
+      const stockVal = (stockRaw === '' || stockRaw === undefined || isNaN(Number(stockRaw))) ? null : Number(stockRaw);
+      masterProducts.push({ row: p + 1, name: row[0], price: Number(row[1]) || 0, stock: stockVal });
+    }
 
     // สรุปยอดขาย/ค้างจ่ายต่อคน จากชีต ProductSales (Timestamp, PlayerName, ItemDetail, Amount, PaymentStatus)
     const salesByPlayer = {};
@@ -105,14 +117,15 @@ app.get('/api/data-summary', async (req, res) => {
       totalRegistered,
       registrationCap: cap,
       registrationIsOpen: true, // TODO: ย้ายตรรกะเปิด-ปิดตามเวลา/วันเสาร์-อาทิตย์มาในรอบถัดไป
-      list
+      list,
+      masterProducts
     };
 
     await redisDb.setCache('data_summary', JSON.stringify(result), 45);
     res.json(result);
   } catch (e) {
     console.error(e);
-    res.status(500).json({ success: false, msg: e.message, list: [], totalRegistered: 0, registrationCap: 40 });
+    res.status(500).json({ success: false, msg: e.message, list: [], totalRegistered: 0, registrationCap: 40, masterProducts: [] });
   }
 });
 
@@ -264,6 +277,124 @@ app.post('/api/admin/checkin', auth.requireAdmin, async (req, res) => {
     res.status(500).json({ success: false, msg: e.message });
   } finally {
     await redisDb.releaseLock(lockKey);
+  }
+});
+
+// =============================================
+// POST /api/walkin — เทียบเท่า registerWalkIn(formData) เดิม (ต้องล็อกอินแอดมินก่อน)
+// Walk-in ลงทะเบียนได้เสมอ ไม่เช็คโควต้า/เวลาเปิดรับ เพราะเป็นการลงทะเบียนโดยแอดมินหน้างานโดยตรง
+// เช็คอินทันทีตั้งแต่ลงทะเบียน จึงบวกค่าสนามเข้ายอดค้างจ่ายอัตโนมัติเหมือนตอนกดเช็คอินปกติ
+// =============================================
+app.post('/api/walkin', auth.requireAdmin, async (req, res) => {
+  const lockKey = 'walkin';
+  const gotLock = await redisDb.acquireLock(lockKey, 10000);
+  if (!gotLock) return res.status(429).json({ success: false, msg: 'ระบบกำลังประมวลผลคำขออื่นอยู่ กรุณาลองใหม่อีกครั้ง' });
+
+  try {
+    const { name, nickname, phone, memberType, timeSlot } = req.body || {};
+    if (!nickname || !String(nickname).trim()) return res.json({ success: false, msg: 'กรุณากรอกชื่อเล่น' });
+
+    const regData = await sheetsDb.getValues(REG_SHEET);
+    const cleanNickname = String(nickname).trim().toLowerCase();
+    const cleanPhoneVal = cleanPhone(phone);
+    for (let i = 1; i < regData.length; i++) {
+      const row = regData[i];
+      if (!row[COL.NAME - 1]) continue;
+      const isWithdrawn = String(row[COL.ATTENDANCE - 1] || '').trim() === 'ถอน';
+      if (isWithdrawn) continue;
+      // เช็คชื่อเล่นซ้ำวันนี้ (ยกเว้นถ้าเป็นเบอร์เดียวกัน ถือว่าเป็นคนเดิม ไม่นับซ้ำ)
+      if (String(row[COL.NICKNAME - 1] || '').trim().toLowerCase() === cleanNickname
+        && cleanPhone(row[COL.PHONE - 1]) !== cleanPhoneVal
+        && isSameBangkokDay(row[COL.TIMESTAMP - 1])) {
+        return res.json({ success: false, msg: `ชื่อเล่น "${nickname}" มีผู้ลงทะเบียนไว้แล้วในวันนี้ กรุณาเปลี่ยนชื่อเล่นเป็นชื่ออื่น`, isDuplicateNickname: true });
+      }
+    }
+
+    const nextId = regData.length;
+    const finalName = (name && String(name).trim()) || nickname;
+    // คอลัมน์ 10 (CustomFee) เว้นว่าง, คอลัมน์ 11 ใส่ 'WALKIN' ให้ระบบรู้ว่าคนนี้เป็น Walk-in (ไม่แสดง/ไม่นับในหน้าลงทะเบียนสาธารณะ)
+    await sheetsDb.appendRow(REG_SHEET, [
+      nextId, new Date().toISOString(), finalName, nickname, phone,
+      memberType || 'บุคคลทั่วไป', timeSlot || 'Walk-in', 'ลงทะเบียนแล้ว', 'มาแล้ว', '', 'WALKIN'
+    ]);
+
+    // เช็คอินทันที จึงบวกค่าสนามเข้ายอดค้างจ่ายอัตโนมัติ
+    let feeCharged = 0;
+    const feesRaw = await redisDb.getSetting('courtFees', null);
+    const fees = feesRaw ? JSON.parse(feesRaw) : DEFAULT_COURT_FEES;
+    const fee = Number(fees[memberType]);
+    if (!isNaN(fee) && fee > 0 && finalName) {
+      await sheetsDb.appendRow(SALES_SHEET, [new Date().toISOString(), finalName, `ค่าสนาม (${memberType})`, fee, 'ยังไม่จ่าย']);
+      feeCharged = fee;
+    }
+
+    await redisDb.clearCache('data_summary');
+    res.json({ success: true, msg: 'ลงทะเบียน Walk-in สำเร็จ!', feeCharged });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, msg: e.message });
+  } finally {
+    await redisDb.releaseLock(lockKey);
+  }
+});
+
+// =============================================
+// POST /api/admin/shop-sale — เทียบเท่า addProductSale(playerName, itemDetail, amount, paymentStatus) เดิม
+// body: { playerName, itemDetail, amount, paymentStatus }
+// =============================================
+app.post('/api/admin/shop-sale', auth.requireAdmin, async (req, res) => {
+  try {
+    const { playerName, itemDetail, amount, paymentStatus } = req.body || {};
+    if (!playerName || !itemDetail || amount === undefined) return res.json({ success: false, msg: 'ข้อมูลไม่ครบถ้วน' });
+
+    // 🆕 กันกดซ้ำ: ถ้ามีรายการเดียวกันเป๊ะๆ (คน+สินค้า+ราคา+สถานะ) เพิ่งถูกบันทึกไปใน 5 วิที่ผ่านมา ให้ข้ามไปเฉย (เทียบเท่า CacheService dedup เดิม)
+    const dupKey = `prodsale_${playerName}_${itemDetail}_${amount}_${paymentStatus}`.replace(/\s+/g, '_');
+    const alreadyDone = await redisDb.getCache(dupKey);
+    if (alreadyDone) return res.json({ success: true, duplicateSkipped: true });
+
+    await sheetsDb.appendRow(SALES_SHEET, [new Date().toISOString(), playerName, itemDetail, Number(amount), paymentStatus || 'ยังไม่จ่าย']);
+    await sheetsDb.deductProductStock(itemDetail, 1); // ตัดสต๊อก 1 ชิ้น (ถ้าสินค้านั้นมีการนับสต๊อกไว้ — ถ้าไม่พบสินค้าชื่อตรงกัน เช่น เป็นค่าสนาม จะไม่ทำอะไร)
+    await redisDb.setCache(dupKey, '1', 5);
+    await redisDb.clearCache('data_summary');
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, msg: e.message });
+  }
+});
+
+// =============================================
+// POST /api/admin/shuttlecock — เทียบเท่า buyShuttlecockSplit(playerNames) เดิม
+// ซื้อลูกแบด 1 ลูก หารราคาเฉลี่ยตามจำนวนผู้เล่นที่เลือก แต่ละคนได้ยอดหารเข้า "ยอดค้างจ่าย" ของตัวเอง
+// body: { playerNames: string[] }
+// =============================================
+app.post('/api/admin/shuttlecock', auth.requireAdmin, async (req, res) => {
+  try {
+    const playerNames = (req.body || {}).playerNames;
+    if (!playerNames || playerNames.length === 0) return res.json({ success: false, msg: 'ไม่พบผู้เล่นที่เลือก' });
+
+    const prodData = await sheetsDb.getValues(PRODUCTS_SHEET);
+    let itemName = 'ลูกแบด';
+    let price = 80; // ราคาสำรอง กรณีไม่พบสินค้าลูกแบดในคลังสินค้า
+    for (let i = 1; i < prodData.length; i++) {
+      const pName = String(prodData[i][0] || '');
+      if (pName.indexOf('ลูกแบด') !== -1) { itemName = pName; price = Number(prodData[i][1]) || price; break; }
+    }
+
+    const count = playerNames.length;
+    const splitAmount = Math.round((price / count) * 100) / 100;
+    const splitLabel = `${itemName} (หารจ่าย ${count} คน)`;
+    const now = new Date().toISOString();
+    for (const name of playerNames) {
+      await sheetsDb.appendRow(SALES_SHEET, [now, name, splitLabel, splitAmount, 'ยังไม่จ่าย']);
+    }
+    await sheetsDb.deductProductStock(itemName, 1); // ซื้อลูกแบด 1 ลูก (หารจ่ายกันกี่คนก็ตัดสต๊อกแค่ 1 ลูก)
+
+    await redisDb.clearCache('data_summary');
+    res.json({ success: true, msg: 'บันทึกการหารค่าลูกแบดสำเร็จ', itemName, price, splitAmount, count });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ success: false, msg: e.message });
   }
 });
 
