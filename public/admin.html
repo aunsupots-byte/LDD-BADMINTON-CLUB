@@ -7,24 +7,71 @@
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap');
+  body { font-family: 'Plus Jakarta Sans', 'Sarabun', sans-serif; }
 
-  <div class="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs text-center py-2 px-4">
+  /* =========================================================
+     🆕 ธีมสว่างสำหรับหน้าแอดมิน (เหมือนกับระบบเดิม) — ตัวหนังสือขยายใหญ่ขึ้น อ่านง่าย สบายตา
+     ========================================================= */
+  .admin-theme { color: #0f172a; }
+  .admin-theme .bg-slate-800\/10, .admin-theme .bg-slate-800\/20, .admin-theme .bg-slate-800\/30,
+  .admin-theme .bg-slate-800\/40, .admin-theme .bg-slate-800\/50 { background-color: #ffffff !important; }
+  .admin-theme .bg-slate-800\/80 { background-color: #eef2f7 !important; }
+  .admin-theme .bg-slate-800 { background-color: #e5e9f0 !important; }
+  .admin-theme .bg-slate-700 { background-color: #dbe2ec !important; }
+  .admin-theme .bg-slate-900, .admin-theme .bg-slate-900\/80 { background-color: #ffffff !important; }
+  .admin-theme .bg-slate-900\/60 { background-color: #f8fafc !important; }
+  .admin-theme .bg-slate-900\/50, .admin-theme .bg-slate-900\/40 { background-color: #f1f5f9 !important; }
+  .admin-theme .bg-slate-950, .admin-theme .bg-slate-950\/60, .admin-theme .bg-slate-950\/40 { background-color: #eef2f7 !important; }
+  /* หมายเหตุ: จงใจไม่แตะ .bg-slate-950\/80 เพราะใช้เป็นฉากหลังหรี่ของหน้าต่าง Modal โดยเฉพาะ ควรคงความเข้มไว้ */
+
+  .admin-theme .border-slate-800, .admin-theme .border-slate-800\/80, .admin-theme .border-slate-800\/60 { border-color: #d8dfe9 !important; }
+  .admin-theme .border-slate-700 { border-color: #c7d1de !important; }
+  .admin-theme .divide-slate-800 > * + * { border-color: #e2e8f0 !important; }
+
+  .admin-theme .text-slate-100, .admin-theme .text-slate-200 { color: #0f172a !important; }
+  .admin-theme .text-slate-300 { color: #1e293b !important; }
+  .admin-theme .text-slate-400 { color: #47556a !important; }
+  .admin-theme .text-slate-500, .admin-theme .text-slate-600 { color: #64748b !important; }
+  .admin-theme .text-indigo-300, .admin-theme .text-indigo-400 { color: #4f46e5 !important; }
+  .admin-theme .text-emerald-300, .admin-theme .text-emerald-400 { color: #059669 !important; }
+  .admin-theme .text-rose-300, .admin-theme .text-rose-400 { color: #e11d48 !important; }
+  .admin-theme .text-amber-400 { color: #b45309 !important; }
+  .admin-theme .bg-indigo-950 { background-color: #e0e7ff !important; }
+
+  .admin-theme input, .admin-theme select, .admin-theme textarea { color: #0f172a !important; }
+  .admin-theme input::placeholder { color: #94a3b8 !important; }
+
+  /* ---- ขยายขนาดตัวหนังสือทั้งหมดในหน้าแอดมินให้ใหญ่และสบายตาขึ้น ---- */
+  .admin-theme { line-height: 1.6; }
+  .admin-theme .text-\[10px\] { font-size: 12.5px !important; }
+  .admin-theme .text-\[11px\] { font-size: 13.5px !important; }
+  .admin-theme .text-xs { font-size: 14px !important; line-height: 1.6 !important; }
+  .admin-theme .text-sm { font-size: 15.5px !important; line-height: 1.6 !important; }
+  .admin-theme .text-base { font-size: 17px !important; }
+  .admin-theme .text-lg { font-size: 19px !important; }
+  .admin-theme table.text-sm { font-size: 14.5px !important; }
+  .admin-theme th, .admin-theme td { padding-top: 10px !important; padding-bottom: 10px !important; }
+</style>
+</head>
+<body class="admin-theme bg-slate-900 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
+
+  <div class="bg-amber-500/10 border-b border-amber-500/30 text-amber-800 text-xs text-center py-2 px-4">
     <i class="fa-solid fa-triangle-exclamation mr-1"></i>
     เวอร์ชันทดสอบการย้ายระบบ (MVP) — มี เช็คอิน / Walk-in / ขายของ / ซื้อลูกแบด แล้ว ส่วนจัดคิวสนาม/ปิดสนามประจำวัน/รายงาน ยังไม่ได้ย้ายมา
   </div>
 
-  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-40">
+  <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40 shadow-lg">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <div class="w-9 h-9 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-400"><i class="fa-solid fa-user-shield"></i></div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-tr from-rose-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0"><i class="fa-solid fa-user-shield text-white text-lg"></i></div>
         <div>
-          <span class="block font-bold text-sm text-slate-100 leading-tight">LDD Badminton Club</span>
+          <span class="block font-bold text-sm sm:text-base tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400 leading-tight">LDD BADMINTON CLUB</span>
           <span class="block text-[10px] text-rose-400 font-medium tracking-wider uppercase">แผงแอดมิน</span>
         </div>
       </div>
-      <a href="/" class="text-xs font-semibold text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-arrow-left mr-1"></i>กลับหน้าลงทะเบียน</a>
+      <a href="/" class="text-xs font-semibold px-3 py-2 rounded-xl bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all"><i class="fa-solid fa-arrow-left mr-1"></i>กลับหน้าลงทะเบียน</a>
     </div>
   </nav>
 
