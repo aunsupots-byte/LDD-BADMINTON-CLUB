@@ -3,19 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LDD Badminton Club</title>
+<title>LDD Badminton Club — ลงทะเบียน</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen selection:bg-indigo-500 selection:text-white">
 
-  <!-- 🆕 แถบแจ้งสถานะการย้ายระบบ: บอกตรงๆ ว่าเวอร์ชันนี้ยังมีแค่ฟีเจอร์หลัก ไม่ใช่ทุกฟีเจอร์ของเวอร์ชัน Apps Script -->
+  <!-- 🆕 แถบแจ้งสถานะการย้ายระบบ -->
   <div class="bg-amber-500/10 border-b border-amber-500/30 text-amber-300 text-xs text-center py-2 px-4">
     <i class="fa-solid fa-triangle-exclamation mr-1"></i>
     เวอร์ชันทดสอบการย้ายระบบ (MVP) — มี ลงทะเบียน / Walk-in / เช็คอิน / ขายของ / ซื้อลูกแบด แล้ว ส่วนจัดคิวสนาม/ปิดสนามประจำวัน/รายงาน ยังไม่ได้ย้ายมา
   </div>
 
+  <!-- 🆕 หน้าลงทะเบียนกับหน้าแอดมินแยกกันคนละหน้าแล้ว: หน้านี้ (index.html) มีแค่ลงทะเบียน+ดูรายชื่อ ไม่มีส่วนแอดมินปนอยู่เลย -->
   <nav class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm sticky top-0 z-40">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -25,7 +26,7 @@
           <span class="block text-[10px] text-indigo-400 font-medium tracking-wider uppercase">Node.js + Sheets Edition</span>
         </div>
       </div>
-      <button onclick="openAdminLoginModal()" id="btnAdminNav" class="text-xs font-semibold text-slate-400 hover:text-white transition-all cursor-pointer"><i class="fa-solid fa-user-shield mr-1"></i>แอดมิน</button>
+      <a href="/admin.html" class="text-xs font-semibold text-slate-400 hover:text-white transition-all"><i class="fa-solid fa-user-shield mr-1"></i>เข้าสู่ระบบแอดมิน</a>
     </div>
   </nav>
 
@@ -90,86 +91,8 @@
 
   </main>
 
-  <!-- ===================== Modal: แอดมินล็อกอิน ===================== -->
-  <div id="adminLoginModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-slate-200"><i class="fa-solid fa-user-shield text-indigo-400 mr-1"></i>เข้าสู่ระบบแอดมิน</h3>
-        <button onclick="closeAdminLoginModal()" class="text-slate-500 hover:text-slate-300 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <input type="password" id="adminPasswordInput" placeholder="รหัสผ่านแอดมิน" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500" onkeydown="if(event.key==='Enter') submitAdminLogin()">
-      <button onclick="submitAdminLogin()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl cursor-pointer">เข้าสู่ระบบ</button>
-    </div>
-  </div>
-
-  <!-- ===================== Panel: แอดมินเช็คอิน (แสดงหลังล็อกอินสำเร็จ) ===================== -->
-  <div id="adminPanel" class="hidden max-w-3xl mx-auto px-4 pb-10 space-y-6">
-    <section class="bg-slate-800/40 border border-slate-800 rounded-3xl p-6 shadow-2xl relative overflow-hidden mt-6">
-      <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-rose-500 to-orange-500"></div>
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold text-slate-100 flex items-center gap-2"><i class="fa-solid fa-user-shield text-rose-400"></i>แผงแอดมิน</h2>
-        <div class="flex items-center gap-2">
-          <button onclick="openWalkInModal()" class="bg-violet-600 hover:bg-violet-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all cursor-pointer"><i class="fa-solid fa-person-walking-arrow-right mr-1"></i>Walk-in</button>
-          <button onclick="openShuttlecockModal()" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-all cursor-pointer"><i class="fa-solid fa-shuttlecock mr-1"></i>ซื้อลูกแบด</button>
-          <button onclick="adminLogout()" class="text-xs text-slate-400 hover:text-white cursor-pointer">ออกจากระบบ</button>
-        </div>
-      </div>
-      <div class="overflow-x-auto border border-slate-800 rounded-2xl">
-        <table class="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr class="bg-slate-900 text-slate-400 border-b border-slate-800 font-semibold text-xs uppercase">
-              <th class="p-2.5 pl-4">ชื่อเล่น</th><th class="p-2.5">ประเภท</th><th class="p-2.5">เบอร์โทร</th><th class="p-2.5 text-right">ค้างจ่าย</th><th class="p-2.5 text-right">จ่ายแล้ว</th><th class="p-2.5 text-center">เช็คอิน</th><th class="p-2.5 text-center pr-4">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody id="adminListBody" class="divide-y divide-slate-800"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
-
-  <!-- ===================== Modal: Walk-in ===================== -->
-  <div id="walkInModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-slate-200"><i class="fa-solid fa-person-walking-arrow-right text-violet-400 mr-1"></i>ลงทะเบียน Walk-in</h3>
-        <button onclick="closeWalkInModal()" class="text-slate-500 hover:text-slate-300 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <input type="text" id="walkInNickname" placeholder="ชื่อเล่น *" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-violet-500">
-      <input type="text" id="walkInName" placeholder="ชื่อ-นามสกุลจริง (ถ้ามี)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-violet-500">
-      <input type="tel" id="walkInPhone" placeholder="เบอร์โทรศัพท์ (ถ้ามี)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-violet-500">
-      <button onclick="submitWalkIn()" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-bold py-3 rounded-xl cursor-pointer">บันทึก Walk-in (เช็คอินทันที)</button>
-    </div>
-  </div>
-
-  <!-- ===================== Modal: ขายของ ===================== -->
-  <div id="shopModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-slate-200"><i class="fa-solid fa-cart-shopping text-emerald-400 mr-1"></i>ขายของให้ <span id="shopModalPlayerName" class="text-emerald-400"></span></h3>
-        <button onclick="closeShopModal()" class="text-slate-500 hover:text-slate-300 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div id="shopProductList" class="space-y-2 max-h-72 overflow-y-auto"></div>
-    </div>
-  </div>
-
-  <!-- ===================== Modal: ซื้อลูกแบด (หารจ่าย) ===================== -->
-  <div id="shuttlecockModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
-    <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 relative">
-      <div class="flex justify-between items-center">
-        <h3 class="font-bold text-base text-slate-200"><i class="fa-solid fa-shuttlecock text-amber-400 mr-1"></i>ซื้อลูกแบด (หารจ่าย)</h3>
-        <button onclick="closeShuttlecockModal()" class="text-slate-500 hover:text-slate-300 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <p class="text-xs text-slate-400">เลือกผู้เล่นที่ลงคอร์ทด้วยกัน ระบบจะหารราคาลูกแบด 1 ลูกเฉลี่ยตามจำนวนคนที่เลือก</p>
-      <div id="shuttlecockPlayerList" class="space-y-1.5 max-h-64 overflow-y-auto"></div>
-      <button onclick="submitShuttlecock()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded-xl cursor-pointer">🏸 ยืนยันซื้อ & หารเงิน</button>
-    </div>
-  </div>
-
 <script>
-  let masterList = [];
-  let masterProducts = [];
-
-  // 🆕 ตัวช่วยเรียก API แทน google.script.run ของเดิม (fetch ธรรมดา ส่ง cookie ไปด้วยเสมอสำหรับ endpoint ของแอดมิน)
+  // 🆕 ตัวช่วยเรียก API แทน google.script.run ของเดิม (fetch ธรรมดา)
   async function callApi(path, method = 'GET', body = null) {
     const res = await fetch('/api/' + path, {
       method,
@@ -187,13 +110,11 @@
     icon.classList.add('animate-spin');
     try {
       const res = await callApi('data-summary');
-      masterList = res.list || [];
-      masterProducts = res.masterProducts || [];
+      const list = res.list || [];
       document.getElementById('navRegistered').innerText = res.totalRegistered || 0;
       document.getElementById('navCap').innerText = res.registrationCap || 40;
-      document.getElementById('registerListCount').innerText = `(${(res.list || []).length} คน)`;
-      renderPublicList(masterList);
-      renderAdminList(masterList);
+      document.getElementById('registerListCount').innerText = `(${list.length} คน)`;
+      renderPublicList(list);
     } catch (e) {
       console.error(e);
     } finally {
@@ -213,25 +134,6 @@
           ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-lg text-[10px] font-bold">มาแล้ว</span>`
           : `<span class="bg-slate-700/30 text-slate-400 border border-slate-600/40 px-2 py-0.5 rounded-lg text-[10px] font-bold">ยังไม่มา</span>`;
       return `<tr class="hover:bg-slate-800/20"><td class="p-2.5 pl-4 text-slate-500">${idx + 1}</td><td class="p-2.5 font-bold text-base">${item.nickname}</td><td class="p-2.5 text-center">${badge}</td></tr>`;
-    }).join('');
-  }
-
-  function renderAdminList(list) {
-    const tbody = document.getElementById('adminListBody');
-    if (!tbody) return;
-    if (!list.length) { tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-500">ยังไม่มีผู้ลงทะเบียนวันนี้</td></tr>`; return; }
-    tbody.innerHTML = list.map((item) => {
-      const checked = item.attendance === 'มาแล้ว' ? 'checked' : '';
-      const disabled = item.attendance === 'ถอน' ? 'disabled' : '';
-      return `<tr class="hover:bg-slate-800/20">
-        <td class="p-2.5 pl-4 font-bold">${item.nickname}</td>
-        <td class="p-2.5 text-slate-400">${item.memberType}</td>
-        <td class="p-2.5 text-slate-400">${item.phone}</td>
-        <td class="p-2.5 text-right text-rose-400 font-bold">${item.unpaidAmount || 0} บ.</td>
-        <td class="p-2.5 text-right text-emerald-400">${item.paidAmount || 0} บ.</td>
-        <td class="p-2.5 text-center"><input type="checkbox" ${checked} ${disabled} onchange="toggleCheckIn(${item.row}, this.checked)" class="w-5 h-5 rounded cursor-pointer accent-emerald-600"></td>
-        <td class="p-2.5 text-center pr-4"><button onclick="openShopModal('${item.name}', '${item.nickname}')" class="text-emerald-400 font-semibold cursor-pointer text-xs"><i class="fa-solid fa-cart-plus"></i> ขายของ</button></td>
-      </tr>`;
     }).join('');
   }
 
@@ -259,161 +161,6 @@
       Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
     } finally {
       btn.disabled = false;
-    }
-  }
-
-  function openAdminLoginModal() { document.getElementById('adminLoginModal').style.display = 'flex'; }
-  function closeAdminLoginModal() { document.getElementById('adminLoginModal').style.display = 'none'; }
-
-  async function submitAdminLogin() {
-    const password = document.getElementById('adminPasswordInput').value;
-    try {
-      const res = await callApi('admin/login', 'POST', { password });
-      if (res.success) {
-        closeAdminLoginModal();
-        document.getElementById('adminPanel').classList.remove('hidden');
-        document.getElementById('btnAdminNav').innerText = 'แผงแอดมิน';
-        Swal.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ', timer: 1200, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
-      } else {
-        Swal.fire({ icon: 'error', title: 'รหัสผ่านไม่ถูกต้อง', background: '#0f172a', color: '#e2e8f0' });
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'เข้าสู่ระบบไม่สำเร็จ', text: e.message, background: '#0f172a', color: '#e2e8f0' });
-    }
-  }
-
-  async function adminLogout() {
-    await callApi('admin/logout', 'POST');
-    document.getElementById('adminPanel').classList.add('hidden');
-    document.getElementById('btnAdminNav').innerText = 'แอดมิน';
-  }
-
-  async function toggleCheckIn(row, isChecked) {
-    const status = isChecked ? 'มาแล้ว' : 'ยังไม่มา';
-    try {
-      const res = await callApi('admin/checkin', 'POST', { row, status });
-      if (res.success) {
-        refreshData();
-        if (status === 'มาแล้ว') {
-          const text = res.feeCharged > 0
-            ? `เพิ่มค่าสนาม ${res.fee} บ. (${res.memberType}) เข้ายอดค้างจ่ายแล้ว`
-            : res.alreadyCharged
-              ? `ค่าสนาม ${res.fee} บ. (${res.memberType}) — เก็บไปแล้วก่อนหน้านี้`
-              : `ค่าสนาม ${res.fee || 0} บ. (${res.memberType || 'ไม่มีค่าใช้จ่าย'})`;
-          Swal.fire({ icon: 'success', title: 'เช็คอินสำเร็จ', text, timer: 2200, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
-        }
-      } else {
-        Swal.fire({ icon: 'error', title: 'เช็คอินไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
-        refreshData();
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
-      refreshData();
-    }
-  }
-
-  // ===================== Walk-in =====================
-  function openWalkInModal() {
-    document.getElementById('walkInNickname').value = '';
-    document.getElementById('walkInName').value = '';
-    document.getElementById('walkInPhone').value = '';
-    document.getElementById('walkInModal').style.display = 'flex';
-  }
-  function closeWalkInModal() { document.getElementById('walkInModal').style.display = 'none'; }
-
-  async function submitWalkIn() {
-    const nickname = document.getElementById('walkInNickname').value.trim();
-    if (!nickname) { Swal.fire({ icon: 'warning', title: 'กรุณากรอกชื่อเล่น', background: '#0f172a', color: '#e2e8f0' }); return; }
-    try {
-      const payload = {
-        name: document.getElementById('walkInName').value.trim(),
-        nickname,
-        phone: document.getElementById('walkInPhone').value.trim(),
-        memberType: 'บุคคลทั่วไป',
-        timeSlot: 'Walk-in'
-      };
-      const res = await callApi('walkin', 'POST', payload);
-      if (res.success) {
-        closeWalkInModal();
-        Swal.fire({ icon: 'success', title: 'ลงทะเบียน Walk-in สำเร็จ', text: res.feeCharged > 0 ? `เพิ่มค่าสนาม ${res.feeCharged} บ. เข้ายอดค้างจ่ายแล้ว` : '', timer: 2200, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
-        refreshData();
-      } else {
-        Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
-    }
-  }
-
-  // ===================== ขายของ =====================
-  let shopModalPlayer = null;
-  function openShopModal(name, nickname) {
-    shopModalPlayer = name;
-    document.getElementById('shopModalPlayerName').innerText = nickname;
-    const listEl = document.getElementById('shopProductList');
-    if (!masterProducts.length) {
-      listEl.innerHTML = `<div class="text-slate-500 text-sm text-center py-4">ยังไม่มีสินค้าในคลัง (เพิ่มได้ในชีต "Products")</div>`;
-    } else {
-      listEl.innerHTML = masterProducts.map(p => {
-        const outOfStock = p.stock !== null && p.stock <= 0;
-        const stockLabel = p.stock === null ? '' : ` <span class="text-[10px] ${outOfStock ? 'text-rose-400' : 'text-slate-500'}">(คงเหลือ ${p.stock})</span>`;
-        return `<button ${outOfStock ? 'disabled' : ''} onclick="submitShopSale('${p.name}', ${p.price})" class="w-full flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-left ${outOfStock ? 'opacity-40 cursor-not-allowed' : 'hover:border-emerald-500 cursor-pointer'} transition-all">
-          <span class="font-semibold text-slate-200">${p.name}${stockLabel}</span>
-          <span class="text-emerald-400 font-bold">${p.price} บ.</span>
-        </button>`;
-      }).join('');
-    }
-    document.getElementById('shopModal').style.display = 'flex';
-  }
-  function closeShopModal() { document.getElementById('shopModal').style.display = 'none'; }
-
-  async function submitShopSale(itemName, price) {
-    try {
-      const res = await callApi('admin/shop-sale', 'POST', { playerName: shopModalPlayer, itemDetail: itemName, amount: price, paymentStatus: 'ยังไม่จ่าย' });
-      if (res.success) {
-        Swal.fire({ icon: 'success', title: 'บันทึกการขายสำเร็จ', text: `${itemName} ${price} บ. เข้ายอดค้างจ่ายแล้ว`, timer: 1800, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
-        closeShopModal();
-        refreshData();
-      } else {
-        Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
-    }
-  }
-
-  // ===================== ซื้อลูกแบด (หารจ่าย) =====================
-  // 🆕 เวอร์ชันนี้ยังไม่มีระบบจัดคิวสนามเรียลไทม์ (จะย้ายมาในรอบถัดไป) จึงให้แอดมินเลือกผู้เล่นที่เช็คอินแล้วเอง แทนการอิงจากคอร์ทจริง
-  function openShuttlecockModal() {
-    const checkedInList = masterList.filter(p => p.attendance === 'มาแล้ว');
-    const listEl = document.getElementById('shuttlecockPlayerList');
-    if (!checkedInList.length) {
-      listEl.innerHTML = `<div class="text-slate-500 text-sm text-center py-4">ยังไม่มีผู้เล่นที่เช็คอินวันนี้</div>`;
-    } else {
-      listEl.innerHTML = checkedInList.map(p => `
-        <label class="flex items-center gap-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 cursor-pointer hover:border-amber-500 transition-all">
-          <input type="checkbox" value="${p.name}" class="shuttle-check w-4 h-4 rounded accent-amber-500 cursor-pointer">
-          <span class="font-semibold text-slate-200">${p.nickname}</span>
-        </label>`).join('');
-    }
-    document.getElementById('shuttlecockModal').style.display = 'flex';
-  }
-  function closeShuttlecockModal() { document.getElementById('shuttlecockModal').style.display = 'none'; }
-
-  async function submitShuttlecock() {
-    const playerNames = Array.from(document.querySelectorAll('.shuttle-check:checked')).map(el => el.value);
-    if (playerNames.length === 0) { Swal.fire({ icon: 'warning', title: 'กรุณาเลือกผู้เล่นอย่างน้อย 1 คน', background: '#0f172a', color: '#e2e8f0' }); return; }
-    try {
-      const res = await callApi('admin/shuttlecock', 'POST', { playerNames });
-      if (res.success) {
-        closeShuttlecockModal();
-        Swal.fire({ icon: 'success', title: 'ซื้อลูกแบดสำเร็จ', text: `${res.itemName} ${res.price} บ. หารคนละ ${res.splitAmount} บ. (${res.count} คน)`, timer: 2500, showConfirmButton: false, background: '#0f172a', color: '#e2e8f0' });
-        refreshData();
-      } else {
-        Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: res.msg, background: '#0f172a', color: '#e2e8f0' });
-      }
-    } catch (e) {
-      Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: e.message, background: '#0f172a', color: '#e2e8f0' });
     }
   }
 

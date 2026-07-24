@@ -218,6 +218,11 @@ app.post('/api/admin/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// 🆕 เช็คสถานะล็อกอินแอดมิน — หน้า admin.html เรียกตอนโหลดหน้าครั้งแรก เพื่อรู้ว่าจะโชว์หน้าล็อกอินหรือแผงควบคุมเลย
+app.get('/api/admin/me', (req, res) => {
+  res.json({ loggedIn: auth.isAdminLoggedIn(req) });
+});
+
 // =============================================
 // POST /api/admin/checkin — เทียบเท่า updateAttendance(row, status) เดิม (ต้องล็อกอินแอดมินก่อน)
 // body: { row, status }  (status: 'มาแล้ว' หรือ 'ยังไม่มา')
